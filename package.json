@@ -1,1 +1,16 @@
-{"name":"playform-studio","version":"0.1.0","private":true,"type":"module","scripts":{"dev":"python3 -m http.server 3000 --directory dist","build":"node scripts/build.mjs","test":"node --test tests/project.test.mjs"}}
+{
+  "name": "playform-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "python3 -m http.server 3000 --directory dist",
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/project.test.mjs",
+    "start": "node scripts/serve.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "npm@11.9.0"
+}
