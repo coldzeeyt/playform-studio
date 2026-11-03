@@ -1,4 +1,4 @@
-import{test}from'node:test';import assert from'node:assert/strict';import{createProject,validateProject}from'../dist/project.js';
-test('every start screen template produces an importable project',()=>{for(const t of ['blank','platformer','rhythm']){const p=createProject('My game',t);assert.equal(validateProject(JSON.parse(JSON.stringify(p))).name,'My game')}});
+import{test}from'node:test';import assert from'node:assert/strict';import{createProject,validateProject,templates}from'../dist/project.js';
+test('every start screen template produces an importable project',()=>{for(const t of Object.keys(templates)){const p=createProject('My game',t);assert.equal(validateProject(JSON.parse(JSON.stringify(p))).name,'My game')}});
 test('rejects corrupted or unsafe imports',()=>{const p=createProject('Game','platformer');assert.throws(()=>validateProject({...p,objects:[{...p.objects[0],w:-3}]}));assert.throws(()=>validateProject({...p,objects:[{...p.objects[0],color:'url(evil)'}]}));assert.throws(()=>validateProject({...p,objects:[p.objects[0],p.objects[0]]}));assert.throws(()=>validateProject({}));});
 test('blank name and unknown template cannot create a project',()=>{assert.throws(()=>createProject(' '));assert.throws(()=>createProject('Game','unknown'))});
