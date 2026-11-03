@@ -20,6 +20,9 @@ try:
  assert all(isinstance(result['answer'][k],str) for k in ['suspectedCause','evidence','proposedFix']),result
  assert 'score' in result['answer']['proposedFix'].lower(),result
  print('PASS: bundled model answered through Orbit API:',json.dumps(result),flush=True)
+ request=Request('http://127.0.0.1:14330/api/orbit',headers={'Content-Type':'application/json'},data=json.dumps({'mode':'build','question':'Build a platformer scene.','project':{'name':'New game','template':'blank','objects':[]}}).encode())
+ build=json.load(urlopen(request,timeout=140));assert any(a.get('op')=='build_template' and a.get('template')=='platformer' for a in build['answer'].get('proposals',[])),build
+ print('PASS: bundled Orbit proposed a real platformer scene build:',json.dumps(build),flush=True)
 finally:
  if server:server.terminate();server.wait(timeout=5)
  model.terminate();model.wait(timeout=10)

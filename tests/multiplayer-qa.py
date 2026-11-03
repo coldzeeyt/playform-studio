@@ -1,0 +1,15 @@
+import json,os,subprocess,time
+from playwright.sync_api import sync_playwright,expect
+server=subprocess.Popen(['node','scripts/serve.mjs'],env={**os.environ,'PORT':'14332'},stdout=subprocess.DEVNULL)
+BASE='http://127.0.0.1:14332'
+try:
+ with sync_playwright() as p:
+  browser=p.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+  host=browser.new_context().new_page();host.set_default_timeout(8000);errors=[];host.on('pageerror',lambda e:errors.append(str(e)))
+  host.goto(BASE);host.evaluate('''async()=>{const{createProject,makeObject}=await import('/project.js');const game=createProject('Co-op QA','blank');const player=makeObject('player',80,100),coin=makeObject('coin',300,100);coin.events=[{id:'collect',condition:'touch',action:'score',value:1}];game.objects=[player,coin];game.gravity=0;localStorage.setItem('playform.projects',JSON.stringify([game]))}''');host.reload();host.locator('.project-open').click();host.locator('#multiplayer-button').click();host.locator('.room-options summary').first.click();host.locator('#player-name').fill('Host');host.locator('#room-capacity').select_option('2');host.locator('#host-room').click();host.locator('.room-options summary').click();expect(host.locator('.room-code')).to_be_visible();code=host.locator('.room-code').inner_text();host.locator('#close-editor-dialog').click()
+  guest=browser.new_context().new_page();guest.set_default_timeout(8000);guest.on('pageerror',lambda e:errors.append(str(e)));guest.goto(BASE);guest.evaluate("localStorage.setItem('playform.player-name','Guest')");guest.goto(BASE+'/play?room='+code);expect(guest.locator('.play-hud')).to_be_visible();expect(guest.locator('.game-player-only')).to_be_visible();assert not guest.locator('.editor-commandbar').is_visible();expect(host.locator('#multiplayer-button')).to_contain_text('2',timeout=10000)
+  host.wait_for_timeout(300);before=host.locator('canvas').screenshot();guest.keyboard.down('ArrowRight');guest.wait_for_timeout(900);guest.keyboard.up('ArrowRight');expect(host.locator('.play-hud')).to_contain_text('Score 1',timeout=10000);expect(guest.locator('.play-hud')).to_contain_text('Score 1');after=host.locator('canvas').screenshot();assert before!=after,'Host canvas did not redraw remote movement'
+  third=browser.new_context().new_page();third.goto(BASE+'/play?room='+code);expect(third.locator('#toast')).to_contain_text('full');third.close()
+  guest.locator('.game-player-bar [data-action="multiplayer"]').click();guest.locator('.room-options summary').click();expect(guest.locator('.room-players')).to_contain_text('Host');guest.locator('#leave-room').click();expect(host.locator('#multiplayer-button')).to_contain_text('1',timeout=10000);host.locator('#multiplayer-button').click();host.locator('.room-options summary').click();host.locator('#leave-room').click();assert not errors,errors
+  print('PASS: two browsers host/join by code, sync movement and coin score, enforce room capacity, and leave cleanly.',flush=True);browser.close()
+finally:server.terminate();server.wait(timeout=5)

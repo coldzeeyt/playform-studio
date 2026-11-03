@@ -26,6 +26,7 @@ with tarfile.open(CACHE/'llama.tar.gz') as archive:archive.extractall(runtime,fi
 server=next(runtime.rglob('llama-server'))
 orbit=TARGET/'resources'/'orbit'
 orbit.mkdir(parents=True,exist_ok=True)
+if (orbit/'runtime').exists():shutil.rmtree(orbit/'runtime')
 shutil.copytree(server.parent,orbit/'runtime',dirs_exist_ok=True,symlinks=True)
 shutil.copy2(CACHE/'orbit-qwen-coder.gguf',orbit/'orbit-qwen-coder.gguf')
 for file in ['QWEN-LICENSE','LLAMA-LICENSE']:shutil.copy2(CACHE/file,orbit/file)
@@ -33,7 +34,7 @@ app=TARGET/'resources'/'app'
 app.mkdir(exist_ok=True)
 for directory in ['dist','desktop']:shutil.copytree(ROOT/directory,app/directory,dirs_exist_ok=True)
 (app/'scripts').mkdir(exist_ok=True)
-for file in ['serve.mjs','orbit.mjs']:shutil.copy2(ROOT/'scripts'/file,app/'scripts'/file)
+for file in ['serve.mjs','orbit.mjs','multiplayer.mjs','windows-export.mjs','game-main.cjs','game-server.cjs','game-player-entry.js']:shutil.copy2(ROOT/'scripts'/file,app/'scripts'/file)
 (app/'package.json').write_text(json.dumps({'name':'playform-studio','version':'0.2.0','description':'Playform Studio with Orbit','main':'desktop/main.cjs','type':'module'}))
 executable=TARGET/'electron'
 if executable.exists():executable.replace(TARGET/'playform-studio')

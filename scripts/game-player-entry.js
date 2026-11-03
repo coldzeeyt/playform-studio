@@ -1,0 +1,3 @@
+import{mountEditor}from'/dist/editor.js';import{validateProject}from'/dist/project.js';
+const response=await fetch('/game-project.json');const project=validateProject(await response.json());let timer;const notify=message=>{const toast=document.querySelector('#toast');toast.textContent=message;toast.style.display='block';clearTimeout(timer);timer=setTimeout(()=>toast.style.display='none',5000)};
+let dispose;function launch(project,room){dispose?.();dispose=mountEditor({root:document.querySelector('#app'),project,playerOnly:true,autoPlay:true,exported:true,initialRoom:room,onSave:()=>true,onHome:()=>location.reload(),onImport:()=>{},onPreferences:()=>{},notify,onJoin:session=>launch(validateProject(session.project),session)})}launch(project);
