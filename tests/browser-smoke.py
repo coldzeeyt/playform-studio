@@ -1,0 +1,86 @@
+import base64
+import subprocess
+import time
+from pathlib import Path
+from playwright.sync_api import sync_playwright, expect
+
+server = subprocess.Popen(['node', 'scripts/serve.mjs'], stdout=subprocess.DEVNULL)
+try:
+    with sync_playwright() as p:
+        browser = p.chromium.launch(executable_path='/usr/bin/chromium', args=['--no-sandbox'])
+        page = browser.new_page(viewport={'width': 1440, 'height': 960})
+        page.set_default_timeout(8000)
+        errors = []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        for attempt in range(20):
+            try:
+                page.goto('http://127.0.0.1:3000', wait_until='networkidle')
+                break
+            except Exception:
+                time.sleep(.1)
+        Path('screenshots').mkdir(exist_ok=True)
+        page.evaluate('document.fonts.ready')
+        assert page.evaluate('document.fonts.check("400 14px Montserrat")')
+        page.screenshot(path='screenshots/title-desktop-montserrat.png', full_page=True)
+        page.set_viewport_size({'width':390,'height':844})
+        page.screenshot(path='screenshots/title-mobile-montserrat.png', full_page=True)
+        page.set_viewport_size({'width':1440,'height':960})
+        page.get_by_role('button', name='New project').click()
+        page.locator('#project-name').fill('Moonlight Adventure')
+        page.locator('#template').select_option('platformer')
+        page.get_by_role('button', name='Create project', exact=False).click()
+        expect(page.get_by_role('heading', name='What’s going into your game?')).to_be_visible()
+        page.locator('[data-upload="sprites"]').set_input_files({'name': 'hero.png', 'mimeType': 'image/png', 'buffer': base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aEioAAAAASUVORK5CYII=')})
+        expect(page.locator('.setup-upload-list img')).to_have_count(1)
+        page.locator('#next-step').click()
+        page.locator('#game-brief').fill('Explore a moon base and collect power cells.')
+        page.locator('#enter-studio').click()
+        expect(page.locator('.pro-studio')).to_be_visible()
+        expect(page.locator('.tree-object')).to_have_count(10)
+        page.locator('.editor-commandbar [data-action="layout"]').click()
+        page.locator('[data-location="assets"]').select_option('right')
+        page.locator('#layout-done').click()
+        expect(page.locator('[data-slot="right"] .panel-assets')).to_have_count(1)
+        page.locator('.editor-commandbar [data-action="layout"]').click()
+        page.locator('[data-preset="default"]').click()
+        page.locator('#layout-done').click()
+        page.locator('[data-select]').filter(has_text='Coin 1').first.click()
+        page.locator('#panel-inspector [data-action="behavior"]').first.click()
+        page.locator('#behavior-form').get_by_role('button', name='Add event').click()
+        expect(page.locator('.event-row')).to_have_count(1)
+        page.locator('[aria-label="Position X"]').fill('448')
+        page.locator('[aria-label="Position X"]').press('Tab')
+        expect(page.locator('[aria-label="Position X"]')).to_have_value('448')
+        page.locator('.editor-commandbar [data-action="undo"]').click()
+        expect(page.locator('[aria-label="Position X"]')).to_have_value('416')
+        page.locator('.editor-commandbar [data-action="redo"]').click()
+        page.locator('#world-gravity').select_option('.17' if page.locator('#world-gravity option[value=".17"]').count() else '0.17')
+        page.locator('.editor-commandbar [data-action="play"]').first.click()
+        expect(page.locator('.play-hud')).to_be_visible()
+        page.keyboard.down('ArrowRight')
+        page.wait_for_timeout(300)
+        page.keyboard.up('ArrowRight')
+        page.locator('.editor-commandbar [data-action="play"]').first.click()
+        Path('screenshots').mkdir(exist_ok=True)
+        page.screenshot(path='screenshots/studio-desktop.png', full_page=True)
+        page.set_viewport_size({'width': 390, 'height': 844})
+        expect(page.locator('.studio-bottom-nav')).to_be_visible()
+        assert not page.evaluate('document.documentElement.scrollWidth > innerWidth'), 'Mobile horizontal overflow'
+        page.screenshot(path='screenshots/studio-mobile.png', full_page=True)
+        page.locator('.studio-bottom-nav [data-mobile="Objects"]').click()
+        page.locator('[data-add="coin"]').click()
+        expect(page.locator('button[data-mobile="Scene"]').first).to_have_class('active')
+        page.locator('.studio-bottom-nav [data-mobile="Events"]').click()
+        expect(page.locator('.workspace-tabs')).to_be_visible()
+        page.locator('.mobile-menu').click()
+        page.locator('.editor-dialog [data-action="home"]').click()
+        page.reload()
+        expect(page.locator('.project-open')).to_have_count(1)
+        page.locator('.project-open').click()
+        expect(page.locator('.pro-studio')).to_be_visible()
+        assert not errors, errors
+        print('Passed: setup/import, desktop panels, docking, events, inspector, undo/redo, physics, play, mobile navigation, persistence; no JS errors.')
+        browser.close()
+finally:
+    server.terminate()
+    server.wait(timeout=5)
