@@ -62,7 +62,8 @@ try:
   run('Editor and tool dialogs fit five screen sizes',tiny_screens)
   def project_roundtrip():
    context,page=fixture();before=data(page)
-   with page.expect_download() as pending:page.locator('.editor-commandbar [data-action="export"]').click()
+   page.locator('.desktop-menus .editor-menu').first.locator('summary').click()
+   with page.expect_download() as pending:page.locator('.desktop-menus .editor-menu').first.locator('[data-action="export"]').click()
    exported=json.loads(Path(pending.value.path()).read_text());assert exported['id']==before['id']
    page.locator('#import').set_input_files({'name':'backup.json','mimeType':'application/json','buffer':json.dumps(exported).encode()})
    expect(page.locator('.pro-studio')).to_be_visible();saved=page.evaluate('JSON.parse(localStorage.getItem("playform.projects"))');assert len(saved)==2 and saved[0]['id']!=saved[1]['id']
