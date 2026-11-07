@@ -9,6 +9,7 @@ try:
     with sync_playwright() as p:
         browser = p.chromium.launch(executable_path='/usr/bin/chromium', args=['--no-sandbox'])
         page = browser.new_page(viewport={'width': 1440, 'height': 960})
+        page.add_init_script("localStorage.setItem('playform.navigation','advanced')")
         page.set_default_timeout(8000)
         errors = []
         page.on('pageerror', lambda e: errors.append(str(e)))

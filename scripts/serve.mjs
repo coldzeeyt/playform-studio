@@ -1,3 +1,4 @@
+import {handleFeedback} from './feedback.mjs';
 import { createServer } from 'node:http';
 import { readFile, readdir } from 'node:fs/promises';
 import { handleOrbit } from './orbit.mjs';
@@ -12,10 +13,11 @@ export const server = createServer((req, res) => {
   const path = new URL(req.url, 'http://localhost').pathname;
   if (path === '/api/export/windows') { handleWindowsExport(req, res); return; }
   if (path.startsWith('/api/multiplayer/')) { handleMultiplayer(req, res); return; }
+  if(path==='/api/feedback'){handleFeedback(req,res);return}
   if (path === '/api/orbit') { handleOrbit(req, res); return; }
   if (path === '/health') { res.writeHead(200); res.end('ok'); return; }
   if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405); res.end(); return; }
-  const asset = files.get(['/','/play','/play/'].includes(path) ? '/index.html' : path);
+  const asset = files.get(['/','/play','/play/','/feedback'].includes(path) ? '/index.html' : path);
   if (!asset) { res.writeHead(404); res.end('Not found'); return; }
   res.writeHead(200, { 'Content-Type': asset.type, 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' });
   res.end(req.method === 'HEAD' ? undefined : asset.body);

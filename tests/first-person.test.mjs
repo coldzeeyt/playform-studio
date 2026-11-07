@@ -1,0 +1,2 @@
+import{test}from'node:test';import assert from'node:assert/strict';import{firstPersonMovement}from'../dist/first-person.js';
+test('first-person movement follows the viewing direction and keeps diagonals normalized',()=>{const forward=firstPersonMovement(0,1,0,6,1);assert.equal(forward.z,-6);assert.equal(forward.x,0);const turn=firstPersonMovement(0,1,Math.PI/2,6,1);assert.ok(Math.abs(turn.x+6)<1e-8);assert.ok(Math.abs(turn.z)<1e-8);const diagonal=firstPersonMovement(1,1,0,6,1);assert.ok(Math.abs(Math.hypot(diagonal.x,diagonal.z)-6)<1e-8)});

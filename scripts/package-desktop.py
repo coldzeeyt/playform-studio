@@ -34,7 +34,7 @@ app=TARGET/'resources'/'app'
 app.mkdir(exist_ok=True)
 for directory in ['dist','desktop']:shutil.copytree(ROOT/directory,app/directory,dirs_exist_ok=True)
 (app/'scripts').mkdir(exist_ok=True)
-for file in ['serve.mjs','orbit.mjs','multiplayer.mjs','windows-export.mjs','game-main.cjs','game-server.cjs','game-player-entry.js']:shutil.copy2(ROOT/'scripts'/file,app/'scripts'/file)
+for file in ['feedback.mjs','serve.mjs','orbit.mjs','multiplayer.mjs','windows-export.mjs','game-main.cjs','game-server.cjs','game-player-entry.js']:shutil.copy2(ROOT/'scripts'/file,app/'scripts'/file)
 (app/'package.json').write_text(json.dumps({'name':'playform-studio','version':'0.2.0','description':'Playform Studio with Orbit','main':'desktop/main.cjs','type':'module'}))
 executable=TARGET/'electron'
 if executable.exists():executable.replace(TARGET/'playform-studio')
