@@ -1,12 +1,13 @@
 import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { handleOrbit } from './orbit.mjs';
 import { handleWindowsExport } from './windows-export.mjs';
 import { handleMultiplayer } from './multiplayer.mjs';
 
-const types = { 'index.html': 'text/html; charset=utf-8', 'style.css': 'text/css; charset=utf-8', 'app.js': 'text/javascript; charset=utf-8', 'project.js': 'text/javascript; charset=utf-8', 'editor.js': 'text/javascript; charset=utf-8', 'title-menu.js': 'text/javascript; charset=utf-8', 'presentation.js': 'text/javascript; charset=utf-8', 'indie-presets.js': 'text/javascript; charset=utf-8', 'events.js': 'text/javascript; charset=utf-8', 'proposals.js': 'text/javascript; charset=utf-8', 'multiplayer.js': 'text/javascript; charset=utf-8', 'mechanics.js': 'text/javascript; charset=utf-8', 'art-editor.js': 'text/javascript; charset=utf-8', 'sound-editor.js': 'text/javascript; charset=utf-8', 'graphics.js': 'text/javascript; charset=utf-8', 'setup.js': 'text/javascript; charset=utf-8', 'editor.css': 'text/css; charset=utf-8', 'art-editor.css': 'text/css; charset=utf-8', 'sound-editor.css': 'text/css; charset=utf-8', 'fonts/montserrat-400.ttf': 'font/ttf', 'fonts/montserrat-500.ttf': 'font/ttf', 'fonts/montserrat-600.ttf': 'font/ttf', 'fonts/montserrat-700.ttf': 'font/ttf', 'fonts/pixelify-sans-700.ttf': 'font/ttf', 'fonts/orbitron-700.ttf': 'font/ttf', 'fonts/lora-700.ttf': 'font/ttf' };
-const files = new Map();
-for (const [file, type] of Object.entries(types)) files.set('/' + file, { body: await readFile(new URL('../dist/' + file, import.meta.url)), type });
+const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.ttf':'font/ttf','.txt':'text/plain','.wasm':'application/wasm'};
+const files=new Map();
+async function load(dir=''){for(const entry of await readdir(new URL('../dist/'+dir,import.meta.url),{withFileTypes:true})){const file=dir+entry.name;if(entry.isDirectory())await load(file+'/');else files.set('/'+file,{body:await readFile(new URL('../dist/'+file,import.meta.url)),type:mime[file.slice(file.lastIndexOf('.'))]||'application/octet-stream'})}}
+await load();
 export const server = createServer((req, res) => {
   const path = new URL(req.url, 'http://localhost').pathname;
   if (path === '/api/export/windows') { handleWindowsExport(req, res); return; }

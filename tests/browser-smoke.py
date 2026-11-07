@@ -35,6 +35,7 @@ try:
         page.locator('#next-step').click()
         page.locator('#game-brief').fill('Explore a moon base and collect power cells.')
         page.locator('#enter-studio').click()
+        page.get_by_role('button',name='Continue without changes').click()
         expect(page.locator('.pro-studio')).to_be_visible()
         expect(page.locator('.tree-object')).to_have_count(10)
         page.locator('.editor-commandbar [data-action="layout"]').click()

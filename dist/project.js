@@ -1,5 +1,7 @@
+import {templates3d,populate3D} from './project-3d.js';
+import {validateUI} from './ui-builder.js';
 import{indieIdeas,populateIndiePreset,tone}from'./indie-presets.js';
-export const templates={blank:'Empty scene',platformer:'Platformer',rhythm:'Rhythm runner',topdown:'Top-down adventure',space:'Space shooter',puzzle:'Coin maze',runner:'Auto runner',...indieIdeas};
+export const templates={...templates3d,blank:'Empty scene',platformer:'Platformer',rhythm:'Rhythm runner',topdown:'Top-down adventure',space:'Space shooter',puzzle:'Coin maze',runner:'Auto runner',...indieIdeas};
 export const objectTypes=['player','platform','coin','hazard','enemy','trigger','camera','flag','gear','sprite'];
 export function makeObject(type,x=160,y=160){
  const sizes={player:[38,44],platform:[192,32],coin:[32,32],hazard:[96,32],enemy:[40,40],trigger:[96,96],camera:[96,64],flag:[48,96],gear:[96,96],sprite:[64,24]};
@@ -23,11 +25,16 @@ export function createProject(name,template='blank'){
  }
  const project={format:'playform',version:1,id:crypto.randomUUID(),name:name.trim(),template,updated:Date.now(),objects,gravity:['topdown','space','puzzle'].includes(template)?0:1,variables:{Score:0,Health:3},sceneName:'MainScene',description:'',assets:[]};
  if(['rhythm','runner'].includes(template)){project.objects=[];const actor=makeObject('player',140,396);project.objects.push(actor);const floor=makeObject('platform',0,440);floor.w=960;floor.h=100;floor.name='Endless track';project.objects.push(floor);const speed=template==='rhythm'?220:180;project.autoRun={enabled:true,speed};const loop=o=>o.events.push({id:crypto.randomUUID(),condition:'frame',action:'loopmove',axis:'x',direction:-1,movementMode:'wrap',value:speed});for(let i=0;i<2;i++){const hazard=makeObject('hazard',700+i*480,408);hazard.w=32;hazard.h=32;hazard.name=`Obstacle ${i+1}`;loop(hazard);project.objects.push(hazard)}for(let i=0;i<6;i++){const pickup=makeObject('coin',380+i*150,350);pickup.events=[{id:crypto.randomUUID(),condition:'touch',action:'score',value:1}];loop(pickup);project.objects.push(pickup)}if(template==='rhythm'){const beat=tone('Metronome',660),clock=makeObject('trigger',0,0);clock.name='Beat clock';clock.events=[{id:crypto.randomUUID(),condition:'timer',action:'sound',value:1,interval:.5,repeat:true,soundId:beat.id}];project.objects.push(clock);project.sounds=[beat];project.bpm=120}project.instructions='Runs automatically. Press Space or tap Jump to clear obstacles. The track repeats forever.'}
+ if(Object.hasOwn(templates3d,template))return populate3D(project);
  return Object.hasOwn(indieIdeas,template)?populateIndiePreset(project,makeObject):project;
 }
 export function validateProject(p){
  if(!p||p.format!=='playform'||p.version!==1||typeof p.name!=='string'||!p.name.trim()||p.name.length>80||!Object.hasOwn(templates,p.template)||!Array.isArray(p.objects)||p.objects.length>10000)throw Error('This is not a supported Playform project.');
  if(p.inputs!==undefined&&p.inputs!==null&&(typeof p.inputs!=='object'||Object.entries(p.inputs).some(([k,v])=>!['left','right','up','down','jump','shoot'].includes(k)||typeof v!=='string'||!/^[A-Za-z0-9]{1,32}$/.test(v))))throw Error('Project contains invalid input bindings.');
+ if(!validateUI(p.ui))throw Error('Project contains invalid game UI.');
+ if(p.dimension!==undefined&&!['2d','3d'].includes(p.dimension))throw Error('Invalid scene dimension.');
+ if(p.dimension==='3d'&&p.objects.some(o=>!['character','box','sphere','ground','coin','hazard'].includes(o.mesh)||!['z','depth'].every(k=>Number.isFinite(o[k])&&Math.abs(o[k])<100000)||o.depth<=0))throw Error('Invalid 3D objects.');
+ if(p.swipeEvents!==undefined&&(!Array.isArray(p.swipeEvents)||p.swipeEvents.length>50||p.swipeEvents.some(e=>!e||!['up','down','left','right'].includes(e.direction)||!['jump','slide','switchlane','addvariable','move'].includes(e.action)||!Number.isFinite(e.value))))throw Error('Invalid swipe events.');
  const isImage=value=>typeof value==='string'&&value.length<=3000000&&/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(value);
  if(p.assets!==undefined&&(!Array.isArray(p.assets)||p.assets.length>200||p.assets.some(a=>!a||typeof a.id!=='string'||typeof a.name!=='string'||a.name.length>200||!['sprites','hazards','collectibles','environment'].includes(a.category)||!isImage(a.data))))throw Error('Project contains invalid imported assets.');
  if(p.backgroundAsset!=null&&!isImage(p.backgroundAsset))throw Error('Project contains an invalid background image.');
