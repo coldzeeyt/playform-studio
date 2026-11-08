@@ -40,3 +40,11 @@ test('exported HTML cannot be broken out of by app content',()=>{
   assert.ok(html.includes('\\u003c/script>'));
   assert.ok(html.startsWith('<!doctype html>'));
 });
+
+test('glass style and remembered values are validated',()=>{
+  const app=createApp('Glass','app-blank');
+  assert.equal(app.theme.glass,true);
+  app.remember=true;assert.doesNotThrow(()=>validateApp(app));
+  app.theme.glass='yes';assert.throws(()=>validateApp(app),/style/);
+  app.theme.glass=false;app.remember='always';assert.throws(()=>validateApp(app),/settings/);
+});

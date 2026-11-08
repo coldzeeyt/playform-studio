@@ -29,11 +29,12 @@ const icons={
   download:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>'
 };
 const themes={
-  Midnight:{accent:'#f5a524',background:'#0f1115',surface:'#1b1e26',text:'#f3f4f6'},
-  Paper:{accent:'#2563eb',background:'#f6f7fb',surface:'#ffffff',text:'#111827'},
-  Ocean:{accent:'#14b8a6',background:'#0b1416',surface:'#132226',text:'#e6f4f1'},
-  Peach:{accent:'#e11d48',background:'#fff7ed',surface:'#ffffff',text:'#1f2937'},
-  Grape:{accent:'#a855f7',background:'#120f1a',surface:'#1e1828',text:'#f1ecf9'}
+  'Liquid Glass':{accent:'#ff9f0a',background:'#0b0e1a',surface:'#1b2033',text:'#ffffff',radius:18,glass:true},
+  Midnight:{accent:'#f5a524',background:'#0f1115',surface:'#1b1e26',text:'#f3f4f6',glass:false},
+  Paper:{accent:'#2563eb',background:'#f6f7fb',surface:'#ffffff',text:'#111827',glass:false},
+  Ocean:{accent:'#14b8a6',background:'#0b1416',surface:'#132226',text:'#e6f4f1',glass:false},
+  Peach:{accent:'#e11d48',background:'#fff7ed',surface:'#ffffff',text:'#1f2937',glass:false},
+  Grape:{accent:'#a855f7',background:'#120f1a',surface:'#1e1828',text:'#f1ecf9',glass:false}
 };
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const VAR_RE=/^[A-Za-z][A-Za-z0-9_]{0,39}$/;
@@ -121,7 +122,7 @@ export function mountAppEditor({root,project,onSave,onHome,notify}){
   }
   function startPlay(){
     mode='play';selectedId=null;root.querySelector('.appb').dataset.mode='play';
-    runtime=runApp($('.appb-screen'),project,{editing:false,onNavigate:sid=>{$('.appb-screen-chip').innerHTML=`${svg(icons.screen,13)} ${esc(project.screens.find(s=>s.id===sid)?.name||'')}`}});
+    runtime=runApp($('.appb-screen'),project,{editing:false,persist:false,onNavigate:sid=>{$('.appb-screen-chip').innerHTML=`${svg(icons.screen,13)} ${esc(project.screens.find(s=>s.id===sid)?.name||'')}`}});
     $('.appb-screen-chip').innerHTML=`${svg(icons.screen,13)} ${esc(project.screens.find(s=>s.id===project.startScreen).name)}`;
     $('.appb-mode').textContent='Playing. Tap around like a user would.';
     const b=$('[data-play]');b.innerHTML=`${svg(icons.stop,12)}<span>Stop</span>`;
@@ -241,6 +242,7 @@ export function mountAppEditor({root,project,onSave,onHome,notify}){
   }
   function newScreen(){return{id:crypto.randomUUID(),name:'Screen '+(project.screens.length+1),title:'Screen '+(project.screens.length+1),showHeader:true,inTabs:false,components:[]}}
 
+  function activeTheme(){const t=project.theme;return Object.keys(themes).find(n=>{const v=themes[n];return v.accent===t.accent&&v.background===t.background&&v.surface===t.surface&&v.text===t.text&&!!v.glass===!!t.glass})||''}
   function renderProps(){
     const panel=$('.appb-right');panel.innerHTML='';
     if(mode==='play'){panel.append(section('Playing',Object.assign(document.createElement('p'),{className:'appb-tip',textContent:'Values reset each time you press Play. Stop to keep editing.'})));return}
@@ -274,12 +276,13 @@ export function mountAppEditor({root,project,onSave,onHome,notify}){
     ));
     const t=project.theme;
     const swatches=document.createElement('div');swatches.className='appb-swatches';
-    swatches.innerHTML=Object.entries(themes).map(([n,v])=>`<button data-theme="${n}" title="${n}" style="--s1:${v.background};--s2:${v.accent};--s3:${v.surface}"><i></i><span>${n}</span></button>`).join('');
+    swatches.innerHTML=Object.entries(themes).map(([n,v])=>`<button data-theme="${esc(n)}" title="${esc(n)}" class="${v.glass?'glass-swatch':''}${n===activeTheme()?' active':''}" style="--s1:${v.background};--s2:${v.accent};--s3:${v.surface}"><i></i><span>${esc(n.replace('Liquid ',''))}</span></button>`).join('');
     swatches.querySelectorAll('[data-theme]').forEach(b=>b.onclick=()=>change(()=>Object.assign(project.theme,themes[b.dataset.theme])));
     const color=(key,label)=>{const i=document.createElement('input');i.type='color';i.value=t[key];i.addEventListener('focus',()=>{editSnapshot=false});i.addEventListener('input',()=>{if(!editSnapshot){pushUndo();editSnapshot=true}t[key]=i.value;persist();renderPhone()});const w=field(label,i);w.classList.add('appb-color');return w};
     const radius=document.createElement('input');radius.type='range';radius.min=0;radius.max=28;radius.value=Math.min(t.radius,28);radius.addEventListener('focus',()=>{editSnapshot=false});radius.addEventListener('input',()=>{if(!editSnapshot){pushUndo();editSnapshot=true}t.radius=+radius.value===28?999:+radius.value;persist();renderPhone()});
+    const glass=checkbox(t,'glass','Glass surfaces (frosted, see-through)');
     const colors=document.createElement('div');colors.className='appb-colors';colors.append(color('accent','Accent'),color('background','Background'),color('surface','Cards'),color('text','Text'));
-    panel.append(section('App style',swatches,colors,field('Corners',radius),field('Font',select(t,'font',fonts))));
+    panel.append(section('App style',swatches,glass,colors,field('Corners',radius),field('Font',select(t,'font',fonts))));
     // Values
     const rows=document.createElement('div');rows.className='appb-values';
     const kind=v=>Array.isArray(v)?'list':typeof v==='boolean'?'yes/no':typeof v==='number'?'number':'text';
@@ -296,7 +299,9 @@ export function mountAppEditor({root,project,onSave,onHome,notify}){
       const del=document.createElement('button');del.className='appb-icon';del.setAttribute('aria-label','Delete value '+k);del.innerHTML=svg(icons.trash,14);del.onclick=()=>change(()=>{delete project.variables[k]});
       r.append(input,del);rows.append(r);
     }
-    panel.append(section('Values',rows));
+    const remember=checkbox(project,'remember','Remember values between visits');
+    const note=document.createElement('p');note.className='appb-tip';note.textContent='When on, the exported app keeps what people type, tick and add on their device. Play here always starts fresh.';
+    panel.append(section('Values',rows,remember,note));
   }
 
   function duplicateSelected(){const c=selected();if(!c)return;const list=screen().components;const copy=JSON.parse(JSON.stringify(c));copy.id=crypto.randomUUID();change(()=>{list.splice(list.indexOf(c)+1,0,copy);selectedId=copy.id})}

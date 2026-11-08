@@ -37,12 +37,16 @@ try:
   # Persistence after reload
   page.wait_for_timeout(400);page.reload();expect(page.locator('.project-row .project-icon')).to_have_text('App');page.locator('.project-open').click()
   expect(page.locator('.appb-screen-row')).to_have_count(2)
+  # Liquid Glass preset and remembered values
+  page.locator('[data-theme="Liquid Glass"]').click();expect(page.locator('.appb-screen .pfa-app')).to_have_class('pfa-app pfa-glass')
+  page.get_by_text('Remember values between visits').click();page.wait_for_timeout(400);assert saved(page)[0]['remember'] is True and saved(page)[0]['theme']['glass'] is True
   # Export a standalone web app and run it
   page.locator('.appb-menu summary').click()
   with page.expect_download() as d:page.locator('[data-export-html]').click()
   path=os.path.join(tempfile.mkdtemp(),'app.html');d.value.save_as(path)
   ex=c.new_page();ex.on('pageerror',lambda e:errors.append('export: '+str(e)));ex.goto('file://'+path)
   ex.locator('.pfa-field input').fill('Fold laundry');ex.locator('.pfa-btn').first.click();expect(ex.locator('.pfa-num')).to_have_text('4')
+  ex.reload();expect(ex.locator('.pfa-num')).to_have_text('4');expect(ex.locator('.pfa-app')).to_have_class('pfa-app pfa-glass')
   # Event template: tabs, switches and {{Name}} text
   page.locator('[data-home]').click();page.locator('.quick-start[data-create="app-event"]').click();page.locator('#project-name').fill('Jam');page.get_by_role('button',name='Create project').click()
   page.locator('[data-play]').click();page.locator('.appb-screen .pfa-tabs button',has_text='RSVP').click();page.locator('.appb-screen .pfa-field input').fill('Robin')

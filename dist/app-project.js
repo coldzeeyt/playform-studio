@@ -65,7 +65,7 @@ const comp=(type,props)=>Object.assign(makeComponent(type),props);
 export function createApp(name,template='app-blank'){
   if(typeof name!=='string'||!name.trim()||name.length>80||!Object.hasOwn(appTemplates,template))throw Error('Enter a project name and choose a valid template.');
   const app={format:'playform',version:1,kind:'app',id:id(),name:name.trim(),template,updated:Date.now(),
-    theme:{accent:'#f5a524',background:'#0f1115',surface:'#1b1e26',text:'#f3f4f6',radius:14,font:'system'},
+    theme:{accent:'#ff9f0a',background:'#0b0e1a',surface:'#1b2033',text:'#ffffff',radius:18,font:'system',glass:true},
     variables:{},screens:[],startScreen:''};
   if(template==='app-blank'){
     app.screens=[screen('Home',[comp('heading',{text:name.trim()}),comp('text',{text:'Add components from the left, then press Play to try it.',muted:true})])];
@@ -124,7 +124,8 @@ export function validateApp(p){
   if(!p||p.format!=='playform'||p.version!==1||p.kind!=='app')fail();
   if(!isStr(p.name,80)||!p.name.trim()||!Object.hasOwn(appTemplates,p.template)||!isStr(p.id,100))fail();
   const t=p.theme;
-  if(!t||!['accent','background','surface','text'].every(k=>isColor(t[k]))||!Number.isFinite(t.radius)||t.radius<0||t.radius>999||!Object.hasOwn(fonts,t.font))fail('App style is invalid.');
+  if(!t||!['accent','background','surface','text'].every(k=>isColor(t[k]))||!Number.isFinite(t.radius)||t.radius<0||t.radius>999||!Object.hasOwn(fonts,t.font)||(t.glass!==undefined&&typeof t.glass!=='boolean'))fail('App style is invalid.');
+  if(p.remember!==undefined&&typeof p.remember!=='boolean')fail('App settings are invalid.');
   if(!p.variables||typeof p.variables!=='object'||Array.isArray(p.variables)||Object.keys(p.variables).length>100)fail('App values are invalid.');
   for(const[k,v]of Object.entries(p.variables)){
     if(!varName(k)||!k)fail('App values are invalid.');
@@ -176,6 +177,10 @@ function validateComponent(c,screenIds,fail){
 export function runApp(root,app,opts={}){
   const editing=!!opts.editing;
   const vars=JSON.parse(JSON.stringify(app.variables||{}));
+  const storeKey='playform-app:'+app.id;
+  const remember=!editing&&app.remember&&opts.persist!==false;
+  if(remember){try{const kept=JSON.parse(localStorage.getItem(storeKey)||'{}');for(const k of Object.keys(vars))if(Object.hasOwn(kept,k)&&typeof kept[k]===typeof vars[k]&&Array.isArray(kept[k])===Array.isArray(vars[k]))vars[k]=kept[k]}catch{}}
+  const keep=()=>{if(remember)try{localStorage.setItem(storeKey,JSON.stringify(vars))}catch{}};
   let history=[opts.screenId||app.startScreen];
   const fontStacks={system:'-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif',rounded:'"SF Pro Rounded","Nunito","Varela Round",ui-rounded,system-ui,sans-serif',serif:'Georgia,"Iowan Old Style","Times New Roman",serif',mono:'ui-monospace,"SF Mono",Menlo,Consolas,monospace'};
   const el=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n};
@@ -211,7 +216,7 @@ export function runApp(root,app,opts={}){
       case 'input':{
         const l=el('label','pfa-field');l.append(el('span','',fill(c.label)));
         const i=el('input');i.placeholder=c.placeholder||'';i.value=c.variable?String(vars[c.variable]??''):'';i.disabled=editing;
-        i.oninput=()=>{if(c.variable)vars[c.variable]=i.value};
+        i.oninput=()=>{if(c.variable){vars[c.variable]=i.value;keep()}};
         i.onkeydown=e=>{if(e.key==='Enter'){const next=w.nextElementSibling?.querySelector('.pfa-btn');next?.click()}};
         l.append(i);w.append(l);break}
       case 'toggle':{
@@ -221,14 +226,14 @@ export function runApp(root,app,opts={}){
         l.append(i,el('i'));w.append(l);break}
       case 'list':{
         const items=c.source==='variable'?(Array.isArray(vars[c.variable])?vars[c.variable]:[]):c.items;
-        const ul=el('ul','pfa-list');
+        const ul=el('ul','pfa-listbox');
         if(!items.length)ul.append(el('li','pfa-empty','Nothing here yet'));
         items.forEach((text,index)=>{const li=el('li');li.append(el('span','',fill(text)));
           if(c.removable&&c.source==='variable'){const x=el('button','pfa-x','✓');x.type='button';x.setAttribute('aria-label','Done: '+text);if(editing)x.tabIndex=-1;x.onclick=()=>{if(editing)return;vars[c.variable].splice(index,1);render()};li.append(x)}
           ul.append(li)});
         w.append(ul);break}
       case 'counter':{const v=vars[c.variable];const n=Array.isArray(v)?v.length:v===undefined?0:v;w.append(el('span','pfa-num',String(typeof n==='boolean'?(n?'Yes':'No'):n)),el('span','pfa-num-label',fill(c.label)));break}
-      case 'card':{const d=el('div','pfa-card');d.append(el('b','',fill(c.title)),el('p','',fill(c.text)));w.append(d);break}
+      case 'card':{const d=el('div','pfa-cardbox');d.append(el('b','',fill(c.title)),el('p','',fill(c.text)));w.append(d);break}
       case 'image':{
         if(c.src){const img=el('img');img.src=c.src;img.alt=c.alt||'';img.style.height=c.height+'px';img.style.objectFit=c.fit;img.draggable=false;w.append(img)}
         else{const ph=el('div','pfa-img-empty','Image');ph.style.height=c.height+'px';w.append(ph)}
@@ -239,9 +244,10 @@ export function runApp(root,app,opts={}){
     return w;
   }
   function render(){
+    keep();
     const s=current(),t=app.theme;
     root.innerHTML='';
-    const frame=el('div','pfa-app');
+    const frame=el('div','pfa-app'+(t.glass?' pfa-glass':''));
     frame.style.cssText=`--a:${t.accent};--bg:${t.background};--sf:${t.surface};--tx:${t.text};--r:${t.radius}px;font-family:${fontStacks[t.font]||fontStacks.system}`;
     if(s.showHeader){const h=el('header','pfa-bar');if(history.length>1){const b=el('button','pfa-back','‹');b.type='button';b.setAttribute('aria-label','Back');b.onclick=()=>run({type:'back'});if(editing)b.tabIndex=-1;h.append(b)}h.append(el('b','',fill(s.title)));frame.append(h)}
     const body=el('main','pfa-body');body.dataset.screen=s.id;
@@ -282,16 +288,16 @@ export const RUNTIME_CSS=`
 .pfa-app .pfa-switch i{flex-shrink:0;width:46px;height:28px;border-radius:99px;background:color-mix(in srgb,var(--tx) 22%,transparent);position:relative;transition:background .2s}
 .pfa-app .pfa-switch i:after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s}
 .pfa-app .pfa-switch input:checked+i{background:var(--a)}.pfa-app .pfa-switch input:checked+i:after{transform:translateX(18px)}
-.pfa-list{list-style:none;margin:0;padding:0;background:var(--sf);border-radius:min(var(--r),18px);overflow:hidden}
-.pfa-list li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;border-bottom:1px solid color-mix(in srgb,var(--tx) 8%,transparent)}
-.pfa-list li:last-child{border-bottom:0}
-.pfa-list .pfa-empty{opacity:.55;justify-content:center}
+.pfa-listbox{list-style:none;margin:0;padding:0;background:var(--sf);border-radius:min(var(--r),18px);overflow:hidden}
+.pfa-listbox li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;border-bottom:1px solid color-mix(in srgb,var(--tx) 8%,transparent)}
+.pfa-listbox li:last-child{border-bottom:0}
+.pfa-listbox .pfa-empty{opacity:.55;justify-content:center}
 .pfa-app .pfa-x{flex-shrink:0;width:30px;height:30px;min-height:0;padding:0;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--tx) 25%,transparent);background:none;color:var(--a);cursor:pointer;font-size:14px}
 .pfa-counter{display:flex;flex-direction:column;align-items:flex-start;padding:14px 16px;background:var(--sf);border-radius:min(var(--r),18px)}
 .pfa-num{font-size:36px;font-weight:750;letter-spacing:-.03em;line-height:1.1;color:var(--a)}
 .pfa-num-label{opacity:.65;font-size:14px}
-.pfa-card{padding:16px;background:var(--sf);border-radius:min(var(--r),20px);border:1px solid color-mix(in srgb,var(--tx) 8%,transparent)}
-.pfa-card b{display:block;font-size:17px;margin-bottom:4px}.pfa-card p{margin:0;opacity:.75}
+.pfa-cardbox{padding:16px;background:var(--sf);border-radius:min(var(--r),20px);border:1px solid color-mix(in srgb,var(--tx) 8%,transparent)}
+.pfa-cardbox b{display:block;font-size:17px;margin-bottom:4px}.pfa-cardbox p{margin:0;opacity:.75}
 .pfa-image img{display:block;width:100%;border-radius:min(var(--r),20px)}
 .pfa-img-empty{display:grid;place-items:center;border-radius:min(var(--r),20px);background:var(--sf);border:1.5px dashed color-mix(in srgb,var(--tx) 25%,transparent);opacity:.7;font-size:14px}
 .pfa-divider hr{border:0;border-top:1px solid color-mix(in srgb,var(--tx) 14%,transparent);margin:4px 0}
@@ -308,6 +314,16 @@ export const RUNTIME_CSS=`
 .pfa-app .pfa-tabs button:hover,.pfa-app .pfa-back:hover,.pfa-app .pfa-x:hover{background:none;border-color:inherit}
 .pfa-app .pfa-tabs button.on:hover{background:color-mix(in srgb,var(--a) 12%,transparent)}
 .pfa-app button{box-shadow:none;text-transform:none;letter-spacing:normal}
+.pfa-app.pfa-glass{background:radial-gradient(70% 45% at 12% 8%,color-mix(in srgb,var(--a) 60%,transparent),transparent 70%),radial-gradient(55% 45% at 95% 28%,rgba(94,129,255,.55),transparent 72%),radial-gradient(70% 50% at 40% 100%,rgba(45,212,191,.38),transparent 70%),var(--bg)}
+.pfa-glass .pfa-cardbox,.pfa-glass .pfa-listbox,.pfa-glass .pfa-counter,.pfa-app.pfa-glass .pfa-switch,.pfa-app.pfa-glass .pfa-field input,.pfa-app.pfa-glass .pfa-btn-secondary,.pfa-glass .pfa-img-empty{background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.06));-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.26);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -1px 0 rgba(255,255,255,.06),0 12px 32px -14px rgba(0,0,0,.45)}
+.pfa-app.pfa-glass .pfa-btn-secondary:hover{background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,.1));border-color:rgba(255,255,255,.4)}
+.pfa-app.pfa-glass .pfa-btn-primary,.pfa-app.pfa-glass .pfa-btn-primary:hover{background:linear-gradient(180deg,color-mix(in srgb,var(--a) 70%,#fff),var(--a) 60%);border:1px solid rgba(255,255,255,.45);box-shadow:inset 0 1px 0 rgba(255,255,255,.65),inset 0 -4px 10px rgba(0,0,0,.18),0 12px 28px -10px color-mix(in srgb,var(--a) 75%,transparent)}
+.pfa-glass .pfa-bar,.pfa-glass .pfa-tabs{background:rgba(255,255,255,.08);-webkit-backdrop-filter:blur(26px) saturate(180%);backdrop-filter:blur(26px) saturate(180%);border-color:rgba(255,255,255,.18)}
+.pfa-glass .pfa-tabs button.on{background:rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
+.pfa-glass .pfa-listbox li{border-color:rgba(255,255,255,.14)}
+.pfa-app.pfa-glass .pfa-field input:focus{border-color:rgba(255,255,255,.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 0 3px color-mix(in srgb,var(--a) 35%,transparent)}
+.pfa-glass .pfa-num{color:var(--tx);text-shadow:0 2px 18px color-mix(in srgb,var(--a) 70%,transparent)}
+.pfa-glass .pfa-toast{background:rgba(255,255,255,.22);color:var(--tx);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.3)}
 `;
 
 // Builds a single-file web app from an app project.
