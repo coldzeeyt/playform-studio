@@ -16,7 +16,7 @@ try:
   browser=p.chromium.connect_over_cdp('http://127.0.0.1:14328')
   page=browser.contexts[0].pages[0]
   page.wait_for_url('http://127.0.0.1:14327/')
-  expect(page.get_by_role('heading',name='Make any game.')).to_be_visible()
+  expect(page.get_by_role('heading',name='Make any game. Or an app.')).to_be_visible()
   page.screenshot(path=str(root/'screenshots/desktop-packaged-title.png'),full_page=True)
   config=json.load(urlopen('http://127.0.0.1:14327/api/orbit'))
   assert config['bundled'] and config['configured'],config

@@ -138,7 +138,7 @@ main{min-width:0}
 .content .intro{display:block;margin-bottom:44px}
 .content .intro h1{font-size:clamp(38px,5vw,58px);line-height:1.02;margin:22px 0 14px}
 .lede{color:var(--ink-2);font-size:16px;line-height:1.55;max-width:520px;margin:0 0 26px}
-.soon{display:block;margin-top:6px;font-size:13px;color:#e7b56a}
+
 .actions{gap:10px;flex-wrap:wrap}
 .actions button{min-height:44px;padding:10px 18px;border-radius:13px;font-weight:550}
 
