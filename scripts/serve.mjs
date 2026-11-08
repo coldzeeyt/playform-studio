@@ -1,3 +1,4 @@
+import {handleAccount,hostingMode} from './hosting.mjs';
 import {handleFeedback} from './feedback.mjs';
 import { createServer } from 'node:http';
 import { readFile, readdir } from 'node:fs/promises';
@@ -5,12 +6,15 @@ import { handleOrbit } from './orbit.mjs';
 import { handleWindowsExport } from './windows-export.mjs';
 import { handleMultiplayer } from './multiplayer.mjs';
 
-const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.ttf':'font/ttf','.txt':'text/plain','.wasm':'application/wasm'};
+const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.ttf':'font/ttf','.txt':'text/plain','.wasm':'application/wasm','.zip':'application/zip'};
 const files=new Map();
 async function load(dir=''){for(const entry of await readdir(new URL('../dist/'+dir,import.meta.url),{withFileTypes:true})){const file=dir+entry.name;if(entry.isDirectory())await load(file+'/');else files.set('/'+file,{body:await readFile(new URL('../dist/'+file,import.meta.url)),type:mime[file.slice(file.lastIndexOf('.'))]||'application/octet-stream'})}}
 await load();
 export const server = createServer((req, res) => {
   const path = new URL(req.url, 'http://localhost').pathname;
+  if(hostingMode()==='external'||['http://127.0.0.1:14327','http://localhost:14327'].includes(req.headers.origin)){res.setHeader('Access-Control-Allow-Origin',hostingMode()==='external'?'*':req.headers.origin);res.setHeader('Access-Control-Allow-Headers','Content-Type, Authorization');res.setHeader('Access-Control-Allow-Methods','GET, POST, OPTIONS');if(req.method==='OPTIONS'){res.writeHead(204);res.end();return}}
+  if(path==='/api/account'){handleAccount(req,res);return}
+  if(path==='/api/server-info'){res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({application:'playform',version:1,mode:hostingMode()}));return}
   if (path === '/api/export/windows') { handleWindowsExport(req, res); return; }
   if (path.startsWith('/api/multiplayer/')) { handleMultiplayer(req, res); return; }
   if(path==='/api/feedback'){handleFeedback(req,res);return}
