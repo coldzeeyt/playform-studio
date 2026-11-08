@@ -1,0 +1,295 @@
+/* Playform Studio: liquid glass layer.
+   Loaded last so it can restyle the existing stylesheets without rewriting them.
+   Remove the <link> to glass.css in index.html to get the flat theme back. */
+
+:root{
+  --bg:#0a0c11;
+  --ink:#eef0f5;
+  --ink-2:#adb3c1;
+  --ink-3:#7a8191;
+  --amber:#f5a524;
+  --amber-hi:#ffc95e;
+  --amber-ink:#2a1704;
+  --amber-tint:rgba(245,165,36,.14);
+  --amber-edge:rgba(255,190,90,.42);
+  --glass:rgba(26,30,40,.52);
+  --glass-strong:rgba(20,23,31,.74);
+  --glass-fill:rgba(255,255,255,.045);
+  --edge:rgba(255,255,255,.09);
+  --edge-hi:rgba(255,255,255,.2);
+  --blur:saturate(175%) blur(22px);
+  --sheen:linear-gradient(180deg,rgba(255,255,255,.085),rgba(255,255,255,.018) 38%,rgba(255,255,255,0) 70%);
+  --lift:inset 0 1px 0 rgba(255,255,255,.13),inset 0 0 0 1px rgba(255,255,255,.025),0 24px 60px -28px rgba(0,0,0,.85);
+  --r-lg:22px;--r-md:16px;--r-sm:11px;
+  --accent:var(--amber);--line:rgba(255,255,255,.075);--muted:var(--ink-2);
+  color:var(--ink);background:var(--bg);
+}
+
+/* ---------- ambient light behind the glass ---------- */
+html{background:var(--bg)}
+body{background:transparent;-webkit-font-smoothing:antialiased}
+body::before,body::after{content:'';position:fixed;pointer-events:none;z-index:-1}
+body::before{
+  inset:-25%;
+  background:
+    radial-gradient(32% 30% at 18% 14%,rgba(245,158,36,.26),transparent 70%),
+    radial-gradient(30% 34% at 86% 12%,rgba(64,120,255,.2),transparent 72%),
+    radial-gradient(38% 36% at 72% 92%,rgba(24,190,170,.14),transparent 70%),
+    radial-gradient(26% 26% at 30% 80%,rgba(255,96,96,.1),transparent 70%);
+  filter:blur(30px);
+  animation:pf-drift 48s ease-in-out infinite alternate;
+}
+body::after{
+  inset:0;opacity:.05;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+@keyframes pf-drift{
+  0%{transform:translate3d(0,0,0) rotate(0deg)}
+  50%{transform:translate3d(3%,-2%,0) rotate(6deg)}
+  100%{transform:translate3d(-2%,3%,0) rotate(-4deg)}
+}
+body.reduce-motion::before{animation:none}
+@media (prefers-reduced-motion:reduce){body::before{animation:none}}
+
+/* ---------- glass surfaces ---------- */
+.sidebar,dialog,.recent,.starter-fold,.setup-asset,
+.simple-navigation,.simple-sidebar,.simple-menu>div,.editor-menu>div,
+.editor-menubar,.editor-commandbar,.three-toolbar,#toast,.mobile-nav{
+  background:var(--sheen),var(--glass);
+  -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+  border:1px solid var(--edge);
+  box-shadow:var(--lift);
+}
+dialog{background:var(--sheen),var(--glass-strong)}
+/* Menus sit inside other glass bars, where a second backdrop blur cannot see past its parent, so they stay nearly solid. */
+.simple-menu>div,.editor-menu>div{background:var(--sheen),#13161e}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .sidebar,dialog,.recent,.starter-fold,.setup-asset,.simple-navigation,.simple-sidebar,
+  .simple-menu>div,.editor-menu>div,.editor-menubar,.editor-commandbar,.three-toolbar,#toast,.mobile-nav{background:#161a22}
+}
+
+/* ---------- base controls ---------- */
+h1,h2,h3{color:var(--ink);letter-spacing:-.015em}
+h1{font-weight:700;letter-spacing:-.035em}
+.ico{flex-shrink:0;opacity:.9}
+
+.actions button,.help-copy .primary,.topbar-prefs,.row-delete,.dialog-top button,.sidebar nav button,.side-bottom button,.mobile-nav button{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+button{
+  background:linear-gradient(180deg,rgba(255,255,255,.085),rgba(255,255,255,.025));
+  border:1px solid var(--edge);border-radius:var(--r-sm);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.1);
+  color:var(--ink);
+  transition:background .18s,border-color .18s,box-shadow .18s,transform .12s;
+}
+button:hover{background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,.045));border-color:var(--edge-hi)}
+button:active:not(:disabled){transform:translateY(1px)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+
+.primary,.purple-button,.pro-studio .purple-button,.simple-top .purple-button{
+  background:linear-gradient(180deg,var(--amber-hi),#f2951c 92%)!important;
+  border:1px solid rgba(255,214,140,.7)!important;
+  color:var(--amber-ink)!important;font-weight:650;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -3px 8px rgba(170,85,0,.35),0 10px 26px -10px rgba(245,150,30,.7)!important;
+}
+.primary:hover,.purple-button:hover{filter:brightness(1.06)}
+
+input,select,textarea{
+  background:rgba(4,6,10,.38);border:1px solid var(--edge);border-radius:var(--r-sm);color:var(--ink);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.35);
+}
+input::placeholder,textarea::placeholder{color:var(--ink-3)}
+input[type=checkbox],input[type=radio],input[type=range]{accent-color:var(--amber);box-shadow:none}
+label{color:var(--ink-2)}
+
+/* ---------- home shell ---------- */
+.shell{grid-template-columns:248px 1fr;background:transparent}
+.sidebar{
+  position:sticky;top:12px;margin:12px 0 12px 12px;height:calc(100svh - 24px);
+  border-radius:var(--r-lg);padding:20px 12px 14px;gap:22px;
+}
+.brand{gap:11px;padding:0 8px;font-size:16px;letter-spacing:-.02em}
+.brand small{color:var(--ink-3);font-weight:500}
+.brand-mark{flex-shrink:0;filter:drop-shadow(0 6px 14px rgba(245,150,30,.35))}
+.sidebar nav{gap:3px}
+.sidebar nav button,.side-bottom button{
+  justify-content:flex-start;gap:11px;width:100%;
+  background:none;border-color:transparent;box-shadow:none;color:var(--ink-2);
+  padding:9px 12px;min-height:38px;font-size:13.5px;font-weight:500;
+}
+.sidebar nav button:hover,.side-bottom button:hover{background:rgba(255,255,255,.06);color:var(--ink);border-color:transparent}
+.sidebar nav button.active{
+  background:linear-gradient(180deg,rgba(245,165,36,.2),rgba(245,165,36,.1));
+  border-color:var(--amber-edge);color:#ffe2ad;
+  box-shadow:inset 0 1px 0 rgba(255,230,180,.25);
+}
+.sidebar nav button span{width:auto;display:inline}
+.nav-rule{border:0;border-top:1px solid var(--line);margin:10px 8px;width:auto}
+.side-bottom{display:grid;gap:6px}
+.side-bottom p{margin:0 0 2px;padding:0 12px;font-size:11.5px;color:var(--ink-3)}
+.status{background:#4ade80;box-shadow:0 0 0 3px rgba(74,222,128,.15)}
+
+main{min-width:0}
+.topbar{height:64px;border:0;background:none;padding:0 44px;color:var(--ink-3);font-size:12.5px}
+.crumbs i{font-style:normal;opacity:.5;margin:0 6px}
+.crumbs b{color:var(--ink-2);font-weight:500}
+.topbar-prefs{display:none}
+
+.content{max-width:1120px;padding:20px 44px 64px!important}
+.content .intro{display:block;margin-bottom:44px}
+.content .intro h1{font-size:clamp(38px,5vw,58px);line-height:1.02;margin:22px 0 14px}
+.lede{color:var(--ink-2);font-size:16px;line-height:1.55;max-width:520px;margin:0 0 26px}
+.soon{display:block;margin-top:6px;font-size:13px;color:#e7b56a}
+.actions{gap:10px;flex-wrap:wrap}
+.actions button{min-height:44px;padding:10px 18px;border-radius:13px;font-weight:550}
+
+.section-head{margin:34px 0 14px}
+.section-head h2{font-size:14px;font-weight:600;color:var(--ink);letter-spacing:0}
+.section-head .muted{font-size:13px;color:var(--ink-3)}
+.section-head input{width:240px;border-radius:12px;padding:9px 12px}
+
+.quick-starts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.quick-start{
+  display:flex;flex-direction:column;align-items:stretch;padding:0;overflow:hidden;
+  border-radius:var(--r-md);text-align:left;
+  background:var(--sheen),var(--glass);
+  -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+  box-shadow:var(--lift);
+}
+.quick-start:hover{transform:translateY(-2px);border-color:var(--amber-edge);box-shadow:var(--lift),0 14px 30px -14px rgba(245,150,30,.45)}
+.quick-start .template-art{width:100%!important;height:auto!important;aspect-ratio:16/9;border:0;border-radius:0;background:#141821}
+.quick-start .template-art canvas{width:100%;height:100%;object-fit:cover}
+.qs-copy{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 12px 12px}
+.qs-copy b{font-size:13px;font-weight:600;line-height:1.3}
+.qs-copy small{font-size:10.5px;font-weight:650;letter-spacing:.04em;color:#ffd08a;background:var(--amber-tint);border:1px solid rgba(245,165,36,.25);border-radius:999px;padding:2px 7px}
+
+.recent{border-radius:var(--r-lg);overflow:hidden}
+.project-row{padding:12px 14px 12px 16px;border-bottom:1px solid var(--line);gap:14px;transition:background .15s}
+.project-row:hover{background:rgba(255,255,255,.035)}
+.project-icon{width:38px;height:38px;border-radius:11px;background:var(--amber-tint);color:#ffd08a;font-size:11px;font-weight:700;border:1px solid rgba(245,165,36,.22)}
+.project-row .project-open{display:block;font-size:14px;font-weight:550;color:var(--ink);box-shadow:none;text-align:left}
+.project-row .project-open:hover{background:none}
+.project-open small{margin-top:2px;font-weight:400;color:var(--ink-3)}
+.row-delete{width:36px;height:36px;min-height:36px;padding:0;background:none!important;border-color:transparent!important;box-shadow:none!important;color:var(--ink-3)}
+.row-delete:hover{color:#ff8a7a}
+.empty{padding:36px 24px;color:var(--ink-3);font-size:13.5px}
+.empty b{color:var(--ink);font-weight:600;font-size:14.5px;margin-bottom:6px}
+
+.help-copy{max-width:640px}
+.help-copy h1{font-size:40px;margin:22px 0 12px}
+.help-copy h2{margin-top:30px;font-size:16px}
+.help-copy p{color:var(--ink-2);line-height:1.65}
+
+/* example game cards, when shown */
+.template,.indie-grid .template{border-radius:var(--r-md);overflow:hidden;background:var(--sheen),var(--glass);border-color:var(--edge)}
+.indie-grid .template:hover{border-color:var(--amber-edge)}
+.starter-fold{border-radius:var(--r-md)}
+.starter-fold>summary{background:none;color:var(--ink-2)}
+
+/* ---------- dialogs and toast ---------- */
+dialog{border-radius:var(--r-lg);padding:26px;color:var(--ink)}
+dialog::backdrop{background:rgba(5,6,10,.5);-webkit-backdrop-filter:blur(6px) saturate(120%);backdrop-filter:blur(6px) saturate(120%)}
+.dialog-top{margin-bottom:4px}
+.dialog-top h2{font-size:19px;font-weight:650}
+.dialog-top button{width:34px;height:34px;min-height:34px;padding:0;border-radius:50%;background:rgba(255,255,255,.06);border-color:var(--edge);font-size:18px;line-height:1}
+dialog .primary{margin-top:6px;min-height:44px;padding:10px 20px}
+#toast{border-radius:999px;padding:11px 20px;color:var(--ink);background:var(--sheen),var(--glass-strong)}
+
+/* ---------- project setup ---------- */
+.setup-shell{background:transparent}
+.setup-progress span{border-radius:999px;border-color:var(--edge);background:rgba(255,255,255,.04);color:var(--ink-3)}
+.setup-progress span.active,.setup-progress span[aria-current]{background:var(--amber-tint);border-color:var(--amber-edge);color:#ffe2ad}
+.setup-stage h1{letter-spacing:-.03em}
+.setup-asset{border-radius:var(--r-md)}
+.setup-asset input[type=file]{border-style:dashed;background:rgba(0,0,0,.25)}
+.setup-asset input[type=file]::file-selector-button{font:inherit;color:var(--ink);background:rgba(255,255,255,.1);border:1px solid var(--edge);border-radius:8px;padding:4px 10px;margin-right:10px;cursor:pointer}
+
+/* ---------- editor chrome (2D and 3D) ---------- */
+.pro-studio,.studio3d,.studio{background:transparent!important}
+.pro-studio button{border-radius:8px;box-shadow:none;background:rgba(255,255,255,.05);border-color:var(--edge)}
+.pro-studio button:hover{background:rgba(255,255,255,.1);border-color:var(--edge-hi)}
+.pro-studio .icon-button{background:none;border-color:transparent}
+.pro-studio button.active,.pro-studio button.selected,.studio3d button.active{
+  background:linear-gradient(180deg,rgba(245,165,36,.26),rgba(245,165,36,.14))!important;
+  border-color:var(--amber-edge)!important;color:#fff1d6!important;
+  box-shadow:inset 0 1px 0 rgba(255,230,180,.25)!important;
+}
+.pro-studio input,.pro-studio select,.studio3d input,.studio3d select{border-radius:8px;background:rgba(4,6,10,.4);border-color:var(--edge)}
+
+.simple-navigation{border-width:0 0 1px;border-radius:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 30px -20px rgba(0,0,0,.8);color:var(--ink)}
+.simple-navigation button,.simple-menu summary{border-radius:10px;border-color:var(--edge);background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.025));box-shadow:inset 0 1px 0 rgba(255,255,255,.09)}
+.simple-home{display:inline-flex;align-items:center;gap:5px}
+.simple-menu[open] summary{border-color:var(--amber-edge);background:var(--amber-tint)}
+.simple-menu>div{border-radius:14px;padding:6px}
+.simple-menu>div button{border-radius:8px;background:none;box-shadow:none}
+.simple-menu>div button:hover{background:rgba(255,255,255,.07)}
+.simple-stages{gap:4px}
+.simple-stages button{border-radius:10px;background:none;box-shadow:none;color:var(--ink-2)}
+.simple-stages button:hover{color:var(--ink);background:rgba(255,255,255,.05)}
+.simple-stages button.active{background:linear-gradient(180deg,rgba(245,165,36,.24),rgba(245,165,36,.12));border-color:var(--amber-edge);color:#fff1d6;box-shadow:inset 0 1px 0 rgba(255,230,180,.22)}
+.simple-stage-help{color:var(--ink-3)}
+
+.simple-editor .simple-sidebar{border-width:0 1px 0 0;border-radius:0}
+.simple-editor .simple-sidebar .editor-panel,.simple-editor .simple-sidebar .three-left,.simple-editor .simple-sidebar .three-right,.simple-editor .simple-sidebar .three-events{background:transparent!important;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none}
+.simple-editor .simple-sidebar .panel-title{background:transparent;border-color:var(--line);color:var(--ink);font-weight:600}
+
+/* Floating panels on wide screens */
+@media (min-width:701px){
+  .simple-editor{padding:10px;gap:10px}
+  .simple-editor>.simple-navigation{border-width:1px;border-radius:var(--r-md)}
+  .simple-editor .editor-grid,.simple-editor .three-layout{gap:10px!important}
+  .simple-editor .simple-sidebar{border-width:1px;border-radius:var(--r-md)}
+  .simple-editor .scene-panel,.simple-editor .three-viewport{border-radius:var(--r-md)!important;border:1px solid var(--edge)!important;overflow:hidden;box-shadow:0 24px 60px -30px rgba(0,0,0,.9)}
+  .simple-editor[data-nav-playing=true] .scene-panel{border-radius:var(--r-md)!important}
+}
+
+.editor-panel,.scene-panel{background:var(--sheen),var(--glass);border-color:var(--edge);border-radius:12px}
+.panel-title{background:rgba(255,255,255,.035);border-color:var(--line)}
+.canvas-tools{background:rgba(18,21,28,.72);border-color:var(--line)}
+.viewport-footer{color:var(--ink-3)}
+.tree-object.selected,.tree-scene.active{background:linear-gradient(90deg,rgba(245,165,36,.28),rgba(245,165,36,.1))!important;box-shadow:inset 2px 0 var(--amber)!important;border-radius:7px;color:#fff1d6}
+.project-tree button{border-radius:7px}
+.project-tree button:hover{background:rgba(255,255,255,.05)}
+.scene-badge{background:rgba(18,21,28,.6)!important;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--edge)!important;border-radius:999px!important}
+
+.editor-menubar{border-width:0 0 1px;border-radius:0}
+.editor-commandbar{border-width:0 0 1px;border-radius:0}
+.editor-menu>div{border-radius:12px}
+.editor-menu summary:hover,.editor-menu[open] summary{background:rgba(255,255,255,.07);border-radius:8px}
+.playform-logo{color:var(--amber)}
+.three-toolbar{border-width:0 0 1px;border-radius:0}
+.three-left,.three-right{background:var(--sheen),var(--glass);border-color:var(--edge)!important}
+
+/* Other editor dialogs share the glass dialog look */
+.editor-dialog,.studio-dialog{background:var(--sheen),var(--glass-strong)!important;border-color:var(--edge)!important}
+
+/* ---------- phones ---------- */
+@media (max-width:700px){
+  .shell{display:block;padding-bottom:96px}
+  .topbar{padding:0 18px;height:60px}
+  .topbar:before{content:'Playform Studio';color:var(--ink);font-size:15px;font-weight:650;letter-spacing:-.02em}
+  .topbar-prefs{display:inline-flex;width:40px;height:40px;min-height:40px;padding:0;border-radius:12px}
+  .content{padding:8px 16px 40px!important}
+  .content .intro h1{font-size:40px;margin-top:8px}
+  .lede{font-size:15px}
+  .actions button{flex:1 1 auto}
+  .quick-starts{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .section-head input{width:100%}
+  .mobile-nav{left:10px;right:10px;bottom:max(10px,env(safe-area-inset-bottom));border-radius:20px;padding:6px;gap:2px}
+  .mobile-nav .nav-rule{display:none}
+  .mobile-nav button{flex-direction:column;gap:3px;font-size:10.5px;padding:7px 2px;min-height:52px;border-radius:14px;background:none;border-color:transparent;box-shadow:none;color:var(--ink-2)}
+  .mobile-nav button.active{background:var(--amber-tint);color:#ffe2ad;border-color:var(--amber-edge)}
+  .mobile-nav button span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .simple-menu>div{border-radius:14px}
+}
+
+/* brand mark used in setup and editor headers */
+.pf-mark{display:inline-grid!important;place-items:center;width:26px!important;height:26px!important;border-radius:8px;background:linear-gradient(135deg,#ffd27a,#f08a24);color:#2a1704!important;font:800 15px/1 Montserrat,sans-serif!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 6px 14px -4px rgba(245,150,30,.5)}
+.project-tree button{background:none!important;border-color:transparent!important}
+.project-tree button:hover{background:rgba(255,255,255,.05)!important}
+.project-tree .tree-object.selected,.project-tree .tree-scene.active{background:linear-gradient(90deg,rgba(245,165,36,.28),rgba(245,165,36,.1))!important}
+
+/* backdrop-filter creates a stacking context, so bars that own drop-downs must sit above the bars below them */
+.editor-menubar{position:relative;z-index:40}
+.editor-commandbar{position:relative;z-index:35}
+.simple-navigation{position:relative;z-index:40}
+.three-toolbar{position:relative;z-index:30}
